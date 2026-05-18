@@ -1,6 +1,17 @@
-# src/base_python_project/main.py
-
-
+from inverted_index_search_engine.file_search import FileSearcher, TextFile
+from inverted_index_search_engine.tokenizer import Tokenizer
+from inverted_index_search_engine.indexer import Indexer
+from inverted_index_search_engine.search_engine import SearchEngine
 def run() -> None:
-    """Core application logic."""
-    print("Hello from base-python-project!")
+    fs = FileSearcher(
+        base_path=r"D:\_CodingProjects\ISYE_6644\module_10_transcripts_comparing_systems",
+        file_types=[TextFile()]
+        )
+    files = fs.get_files()
+    tokenizer = Tokenizer(files)
+    tokens = tokenizer.tokenize()
+    indexer = Indexer(tokens)
+    token_map = indexer.get_word_metadata()
+    search_engine = SearchEngine(token_map)
+    matches = search_engine.get_ranked_matches('yoursearchword')
+    print('\n'.join([f'Match:  {match_name}\nDistance:  {inner_dict['distance']}\n' for match_name, inner_dict in matches.items()]))
