@@ -1,4 +1,4 @@
-from textual import events
+from textual import work
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer, RichLog, Input
 from rich.table import Table
@@ -24,9 +24,12 @@ class Tui(App):
         yield RichLog()
         yield Footer()
 
+    @work(thread=True, exclusive=True)
     def on_input_changed(self, event: Input.Changed) -> None:
         """Event handler called when a button is pressed."""
-        current_text = event.value.strip()
-        ranked_matches = self.search_engine.get_ranked_matches(current_text)
         text_log = self.query_one(RichLog)
-        text_log.write(ranked_matches)
+        text_log.clear()
+        current_text = event.value.strip()
+        if current_text:
+            ranked_matches = self.search_engine.get_ranked_matches(current_text)
+            text_log.write(ranked_matches)
