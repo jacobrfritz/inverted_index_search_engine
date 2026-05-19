@@ -1,5 +1,3 @@
-import re
-
 from Levenshtein import jaro_winkler
 
 """
@@ -25,6 +23,4 @@ class SearchEngine:
                 key=lambda item: item[1]['distance'],
                 reverse=True
             )
-
-        
         return dict(sorted_matches[:max_num_matches])
