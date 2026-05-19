@@ -11,7 +11,6 @@ class File:
         
     def __repr__(self):
         return f"""
-        File Name: {self.path.name}\n
-        Tokens: {len(self.tokenized_text)}
+        File Name: {self.path.name}
     """
     

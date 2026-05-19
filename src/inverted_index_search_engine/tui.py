@@ -32,4 +32,4 @@ class Tui(App):
         current_text = event.value.strip()
         if current_text:
             ranked_matches = self.search_engine.get_ranked_matches(current_text)
-            text_log.write(ranked_matches)
+            text_log.write('\n'.join([f'{word}: Files: {item['files']}\nPositions: {item['positions']}' for word,item in ranked_matches.items()]))
