@@ -8,9 +8,8 @@ from inverted_index_search_engine.tui import Tui
 
 def run() -> None:
     fs = FileSearcher(
-        base_path=r"/Users/jake/projects/ISYE6644",
-        file_types=[TextFile()]
-        )
+        base_path=r"/Users/jake/projects/ISYE6644", file_types=[TextFile()]
+    )
     files = fs.get_files()
     tokenizer = Tokenizer(files)
     tokens = tokenizer.tokenize()
