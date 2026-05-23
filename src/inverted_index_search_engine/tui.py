@@ -37,11 +37,12 @@ class Tui(App):
         self.call_from_thread(results_list.clear)
         
         current_text = event.value.strip()
+        print(current_text)
         if current_text:
-            ranked_matches = self.search_engine.get_ranked_matches(current_text, 1)
+            ranked_matches = self.search_engine.get_ranked_matches(current_text, 10)
             
-            new_suggestions = list(ranked_matches.keys())
-            
+            new_suggestions = [file.path.name for file in ranked_matches]
+            print(new_suggestions)
             if new_suggestions:
                 self.call_from_thread(
                     lambda: setattr(
@@ -53,11 +54,8 @@ class Tui(App):
             else:
                 self.call_from_thread(lambda: setattr(search_input, "suggester", None))
 
-            for word, item in ranked_matches.items():
-                files = set(item['files'])
-                
-                for file in sorted(files, key=lambda f: f.path.name):
-                    item_widget = ListItem(Label(file.path.name))
-                    self.call_from_thread(results_list.append, item_widget)
+            for file in ranked_matches:
+                item_widget = ListItem(Label(file.path.name))
+                self.call_from_thread(results_list.append, item_widget)
         else:
             self.call_from_thread(lambda: setattr(search_input, "suggester", None))

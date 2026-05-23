@@ -1,6 +1,5 @@
 from inverted_index_search_engine.file_search import FileSearcher, TextFile
 from inverted_index_search_engine.tokenizer import Tokenizer
-from inverted_index_search_engine.indexer import Indexer
 from inverted_index_search_engine.search_engine import SearchEngine
 
 from inverted_index_search_engine.tui import Tui
@@ -12,10 +11,8 @@ def run() -> None:
     )
     files = fs.get_files()
     tokenizer = Tokenizer(files)
-    tokens = tokenizer.tokenize()
-    indexer = Indexer(tokens)
-    token_map = indexer.get_word_metadata()
-    search_engine = SearchEngine(token_map)
+    files = tokenizer.tokenize()
+    search_engine = SearchEngine(files)
     app = Tui(search_engine)
     app.run()
     # matches = search_engine.get_ranked_matches('yoursearchword')

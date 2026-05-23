@@ -1,4 +1,8 @@
+from __future__ import annotations
+
 from Levenshtein import jaro_winkler
+
+from inverted_index_search_engine.interfaces import File
 
 """
 receives text map and searches 
@@ -8,17 +12,19 @@ and returns the top few results
 
 
 class SearchEngine:
-    def __init__(self, text_map: dict):
-        self.text_map = text_map
+    def __init__(self, files:list[File]):
+        self.files = files
 
-    def calculate_distance(self, input_word):
-        for word in self.text_map.keys():
-            self.text_map[word]["distance"] = round(jaro_winkler(input_word, word), 3)
+    def calculate_distances(self, input_word:str, f:File):
+        for word in f.tokenized_text:
+            word['current_distance'] = round(jaro_winkler(input_word, word['token']), 3)
+        return f
 
-    def get_ranked_matches(self, input_word, max_num_matches: int = 7):
-        self.calculate_distance(input_word)
+    def get_ranked_matches(self, input_word:str, max_num_matches: int = 7)-> list[File]:
+        augmented_files = list() 
+        for file in self.files:
+            file_with_distance = self.calculate_distances(input_word, file)
+            augmented_files.append(file_with_distance)
 
-        sorted_matches = sorted(
-            self.text_map.items(), key=lambda item: item[1]["distance"], reverse=True
-        )
-        return dict(sorted_matches[:max_num_matches])
+        ranked_augmented_files = sorted(augmented_files, key=lambda file: file.get_word_count(input_word), reverse=True)[:max_num_matches]
+        return ranked_augmented_files
