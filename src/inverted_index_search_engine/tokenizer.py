@@ -12,6 +12,9 @@ class Tokenizer:
     def __init__(self, files: list[File]):
         self.files = files
 
+    def _get_word_count(self, word:str, f:File):
+        return len([word['token'] for word in f.tokenized_text if word['token'] == word])
+    
     def tokenize(self) -> list[File]:
         out = list()
         
@@ -19,16 +22,16 @@ class Tokenizer:
 
         for f in self.files:
             token_mappings = []
-            raw_text = f.raw_text
             
-            for match in word_pattern.finditer(raw_text):
+            for match in word_pattern.finditer(f.raw_text):
                 word = match.group().lower()
                 
                 if word not in STOP_WORDS:
                     token_mappings.append({
-                        "token": word,
+                        "token": word.lower(),
                         "start": match.start(),  
-                        "end": match.end()  
+                        "end": match.end(),
+                        "word_count": self._get_word_count(word, f)
                     })
             
             f.tokenized_text = token_mappings

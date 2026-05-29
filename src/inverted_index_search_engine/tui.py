@@ -1,18 +1,39 @@
 from textual import work
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer, Input, ListView, ListItem, Label
-from textual.suggester import SuggestFromList
+from textual.suggester import Suggester
 from rich.table import Table
 from inverted_index_search_engine.search_engine import SearchEngine
 
-"""
-textual tui that triggers the search engine service to a begin a search or switch to a new one
-"""
+
+class AsyncSearchSuggester(Suggester):
+    """
+    Natively hooks into Textual's input loop.
+    Asks the search engine for a fresh suggestion on every single keystroke.
+    """
+    def __init__(self, search_engine: SearchEngine, word_metadata: dict):
+        # use_cache=False prevents Textual from serving stale, old keystroke lookups
+        super().__init__(use_cache=False)
+        self.search_engine = search_engine
+        self.word_metadata = word_metadata
+
+    async def get_suggestion(self, value: str) -> str | None:
+        current_text = value.strip()
+        if not current_text:
+            return None
+            
+        # Get the word completion from your search engine
+        closest_word = self.search_engine.get_closest_word(current_text, self.word_metadata)
+        
+        # Return the word if it matches, otherwise returning None hides the grey text
+        return closest_word if closest_word else None
+
 
 class Tui(App):
-    def __init__(self, search_engine: SearchEngine):
+    def __init__(self, search_engine: SearchEngine, word_metadata: dict):
         super().__init__()
         self.search_engine = search_engine
+        self.word_metadata = word_metadata
 
     BINDINGS = [("ctrl+d", "toggle_dark", "Toggle dark mode")]
 
@@ -21,41 +42,30 @@ class Tui(App):
         yield Header()
         yield Input(
             placeholder="Type a search query...",
-            id="search_input"  # Added an ID so we can easily query it
+            id="search_input",
+            # Inject the custom suggester directly into the widget configuration
+            suggester=AsyncSearchSuggester(self.search_engine, self.word_metadata)
         )
         yield ListView(id="file_results")
         yield Footer()
 
     @work(thread=True, exclusive=True)
     def on_input_changed(self, event: Input.Changed) -> None:
-        """Event handler called when the input text changes."""
-        
+        """
+        Event handler handles ONLY the heavy background file searching.
+        It no longer touches or interferes with the input's suggester property.
+        """
         results_list = self.query_one("#file_results", ListView)
-        search_input = self.query_one("#search_input", Input)
         
-        # Clear previous results safely from the thread
+        # Clear UI list state safely
         self.call_from_thread(results_list.clear)
-        
         current_text = event.value.strip()
-        print(current_text)
+        
         if current_text:
-            ranked_matches = self.search_engine.get_ranked_matches(current_text, 10)
+            # Get closest word to find the files mapped to it
+            closest_word = self.search_engine.get_closest_word(current_text, self.word_metadata)
+            search_results = self.search_engine.get_ranked_files(closest_word, self.word_metadata, 3)
             
-            new_suggestions = [file.path.name for file in ranked_matches]
-            print(new_suggestions)
-            if new_suggestions:
-                self.call_from_thread(
-                    lambda: setattr(
-                        search_input, 
-                        "suggester", 
-                        SuggestFromList(new_suggestions, case_sensitive=False)
-                    )
-                )
-            else:
-                self.call_from_thread(lambda: setattr(search_input, "suggester", None))
-
-            for file in ranked_matches:
+            for file in search_results:
                 item_widget = ListItem(Label(file.path.name))
                 self.call_from_thread(results_list.append, item_widget)
-        else:
-            self.call_from_thread(lambda: setattr(search_input, "suggester", None))

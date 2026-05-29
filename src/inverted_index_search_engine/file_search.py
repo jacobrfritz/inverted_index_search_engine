@@ -34,6 +34,6 @@ class FileSearcher:
             files = self.path.rglob("*" + file_type.extension)
             for f in files:
                 text = file_type.get_text(f)
-                found_file = File(path=f, text=text)
+                found_file = File(path=f, text=text.lower())
                 self.found_files.append(found_file)
         return self.found_files
